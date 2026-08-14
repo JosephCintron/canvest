@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvest — Buy art on data, not taste</title>
+<meta name="description" content="Canvest is a self-hosted platform for evidence-driven art investing: source undervalued auction art and resell for profit, with every buy/skip decision backed by real realized sold prices.">
+<style>
+  :root{
+    --bg:#F4EEE1; --panel:#FBF7EE; --ink:#2B2622; --muted:#6B6259;
+    --line:#D8CBB4; --accent:#9C6B3F; --accent2:#3E6E64; --chip:#EAE0CC;
+    --shadow:0 8px 30px rgba(43,38,34,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#17130F; --panel:#211B15; --ink:#EFE7D8; --muted:#B3A793;
+      --line:#3A3025; --accent:#D6A15E; --accent2:#7FB6A6; --chip:#2C2419;
+      --shadow:0 8px 30px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17130F; --panel:#211B15; --ink:#EFE7D8; --muted:#B3A793;
+    --line:#3A3025; --accent:#D6A15E; --accent2:#7FB6A6; --chip:#2C2419;
+    --shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Georgia,'Times New Roman',serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 22px}
+  a{color:var(--accent)}
+  header.top{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  header.top .brand{display:flex;align-items:center;gap:12px;font-size:22px;letter-spacing:.5px}
+  header.top img{height:40px;width:auto}
+  header.top nav a{margin-left:20px;text-decoration:none;color:var(--muted);font-size:15px}
+  header.top nav a:hover{color:var(--ink)}
+
+  .hero{text-align:center;padding:36px 0 12px}
+  .hero .eyebrow{color:var(--accent);letter-spacing:2px;text-transform:uppercase;font-size:13px;margin:0 0 10px}
+  .hero h1{font-size:clamp(34px,6vw,60px);line-height:1.05;margin:0 0 14px;letter-spacing:.5px}
+  .hero p.lede{font-size:clamp(17px,2.4vw,21px);color:var(--muted);max-width:680px;margin:0 auto 26px}
+  .cta{display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .btn{display:inline-block;padding:12px 22px;border-radius:10px;text-decoration:none;font-size:16px;border:1.5px solid var(--ink)}
+  .btn.primary{background:var(--ink);color:var(--bg)}
+  .btn.ghost{color:var(--ink)}
+  .note{color:var(--muted);font-size:14px;margin-top:16px;font-style:italic}
+
+  section{padding:44px 0;border-top:1px solid var(--line)}
+  section h2{font-size:clamp(24px,3.4vw,32px);margin:0 0 8px;text-align:center}
+  section .sub{color:var(--muted);text-align:center;max-width:660px;margin:0 auto 30px}
+
+  .figure{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+  .figure img{width:100%;height:auto;display:block;border-radius:8px}
+  .figure.diagram{padding:0;border:none;background:none;box-shadow:none}
+  .figure.diagram img{border-radius:14px}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .step .n{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;
+    background:var(--chip);color:var(--accent);font-weight:bold;margin-bottom:8px}
+  .step h3{margin:0 0 6px;font-size:18px}
+  .step p{margin:0;color:var(--muted);font-size:15px}
+
+  .shots{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .shots figcaption{color:var(--muted);font-size:14px;margin-top:8px;text-align:center}
+
+  .features{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  .feature{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .feature b{display:block;margin-bottom:4px}
+  .feature span{color:var(--muted);font-size:15px}
+
+  .gate{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow)}
+  .gate table{width:100%;border-collapse:collapse;font-size:15px}
+  .gate th,.gate td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .gate th{color:var(--accent);font-weight:normal}
+  .verdict{font-weight:bold;letter-spacing:.5px}
+
+  .closing{text-align:center}
+  .closing .btn{margin-top:10px}
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:13px;text-align:center}
+
+  @media (max-width:760px){
+    .steps{grid-template-columns:1fr}
+    .shots{grid-template-columns:1fr}
+    .features{grid-template-columns:1fr}
+    header.top nav{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Canvest</div>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#gate">The gate</a>
+      <a href="ml-methodology.html">ML methodology</a>
+      <a href="#see">See it</a>
+      <a href="docs/methodology.md">Docs</a>
+    </nav>
+  </header>
+</div>
+
+<div class="wrap hero">
+  <p class="eyebrow">Evidence-driven art investing</p>
+  <h1>Buy art on data,<br>not taste.</h1>
+  <p class="lede">Canvest sources undervalued works at online art &amp; estate auctions and
+    resells them for profit — with every buy/skip decision backed by <em>real, realized
+    sold prices</em>, not gut feel.</p>
+  <div class="cta">
+    <a class="btn primary" href="#how">See how it works</a>
+    <a class="btn ghost" href="https://github.com/JosephCintron/canvest">View on GitHub</a>
+  </div>
+  <p class="note">A portfolio &amp; product showcase by Joseph Cintron — what Canvest does and how I built it, not the full source.</p>
+</div>
+
+<section id="problem">
+  <div class="wrap">
+    <h2>Auction art is priced on taste</h2>
+    <p class="sub">A piece "looks like it should sell for a lot," so someone bids — then it
+      sits, or resells for a fraction once premium, tax, shipping, and fees are counted.
+      The people who profit aren't the ones with the best eye. They're the ones with the
+      best <strong>evidence and discipline</strong>. Canvest turns that into software.</p>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>One disciplined loop</h2>
+    <p class="sub">Each cycle feeds the next: what actually sold becomes the evidence that
+      sharpens the next valuation. That compounding accuracy is the moat.</p>
+    <div class="figure diagram"><img src="assets/loop.svg" alt="The Canvest loop"></div>
+    <div class="steps" style="margin-top:26px">
+      <div class="step"><span class="n">1</span><h3>Research &amp; rubric</h3><p>Build an evidence-backed thesis, then a versioned rubric for what to buy.</p></div>
+      <div class="step"><span class="n">2</span><h3>Source &amp; triage</h3><p>Capture listings, then score every one for free on a local model.</p></div>
+      <div class="step"><span class="n">3</span><h3>Deep valuation</h3><p>For the shortlist, estimate framed resale and cite realized comps.</p></div>
+      <div class="step"><span class="n">4</span><h3>The gate</h3><p>Bid only when a verified realized comp backs the number.</p></div>
+      <div class="step"><span class="n">5</span><h3>Track &amp; record</h3><p>Live ROI as bids move; log what was won, lost, and resold.</p></div>
+      <div class="step"><span class="n">6</span><h3>Calibrate</h3><p>Measure predicted vs. realized and let accuracy compound.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="gate">
+  <div class="wrap">
+    <h2>The evidence gate</h2>
+    <p class="sub">The heart of the method. A strong ROI on paper means nothing if the
+      resale figure rests on no real sold comparable. So the tier stays pure economics —
+      and the <em>verdict</em> adds a hard gate.</p>
+    <div class="gate">
+      <table>
+        <tr><th>Verdict</th><th>Meaning</th></tr>
+        <tr><td class="verdict" style="color:var(--accent2)">BID</td><td>Biddable economics <strong>and</strong> a verified realized comp clears the floor.</td></tr>
+        <tr><td class="verdict" style="color:var(--accent)">NO-BID</td><td>Good ROI on paper, but no qualifying realized comp — pass. This is the discipline that protects you.</td></tr>
+        <tr><td class="verdict">WATCH</td><td>Positive but sub-target, or not yet valued.</td></tr>
+        <tr><td class="verdict">SKIP</td><td>Projected loss, or over budget.</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="see">
+  <div class="wrap">
+    <h2>See it</h2>
+    <p class="sub">A demo instance populated with synthetic data — no real listings,
+      artists, or prices.</p>
+    <div class="shots">
+      <figure class="figure"><img src="assets/screenshots/overview.png" alt="Portfolio overview"><figcaption>Portfolio overview</figcaption></figure>
+      <figure class="figure"><img src="assets/screenshots/watchlist.png" alt="Watchlist with verdicts"><figcaption>Watchlist with live verdicts</figcaption></figure>
+      <figure class="figure"><img src="assets/screenshots/item-detail.png" alt="Lot detail"><figcaption>Cost → resale → verdict</figcaption></figure>
+      <figure class="figure"><img src="assets/screenshots/calibration.png" alt="Calibration"><figcaption>Prediction calibration</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>What's inside</h2>
+    <div class="features">
+      <div class="feature"><b>Two-tier analysis</b><span>Free local triage on everything; metered deep valuation on the shortlist only.</span></div>
+      <div class="feature"><b>Deterministic ROI</b><span>An all-in cost model recomputed on every read, so verdicts track the live bid for free.</span></div>
+      <div class="feature"><b>Realized-comp library</b><span>A growing pool of actual sold prices that grounds every valuation.</span></div>
+      <div class="feature"><b>Calibration &amp; track record</b><span>Predicted-vs-realized accuracy as the number that trends up over time.</span></div>
+      <div class="feature"><b>Self-hosted &amp; private</b><span>Runs quietly on one machine, reached privately by a small team.</span></div>
+      <div class="feature"><b>Polite by design</b><span>Human-in-the-loop capture, no high-frequency scraping.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="cta" class="closing">
+  <div class="wrap">
+    <h2>About &amp; contact</h2>
+    <p class="sub">I designed and built Canvest end to end as a case study in taking an
+      open-ended, quantitative problem from a hypothesis to a validated, self-hosted
+      system. For research opportunities, collaboration, or a walkthrough, get in touch
+      via my GitHub profile.</p>
+    <a class="btn primary" href="docs/methodology.md">Read the methodology</a>
+    <a class="btn ghost" href="https://github.com/JosephCintron">GitHub profile</a>
+  </div>
+</section>
+
+<footer>
+  © 2026 Joseph Cintron. All rights reserved. A portfolio &amp; product showcase — not open-source software.
+</footer>
+
+</body>
+</html>

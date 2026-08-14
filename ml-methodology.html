@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvest — ML methodology & evaluation</title>
+<meta name="description" content="How Canvest builds reliably on top of language models: structured output over a closed schema, a cheap-first inference funnel, and validation & calibration as the guardrail — with an honest evaluation note.">
+<style>
+  :root{
+    --bg:#F4EEE1; --panel:#FBF7EE; --ink:#2B2622; --muted:#6B6259;
+    --line:#D8CBB4; --accent:#9C6B3F; --accent2:#3E6E64; --chip:#EAE0CC;
+    --shadow:0 8px 30px rgba(43,38,34,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#17130F; --panel:#211B15; --ink:#EFE7D8; --muted:#B3A793;
+      --line:#3A3025; --accent:#D6A15E; --accent2:#7FB6A6; --chip:#2C2419;
+      --shadow:0 8px 30px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17130F; --panel:#211B15; --ink:#EFE7D8; --muted:#B3A793;
+    --line:#3A3025; --accent:#D6A15E; --accent2:#7FB6A6; --chip:#2C2419;
+    --shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Georgia,'Times New Roman',serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 22px}
+  a{color:var(--accent)}
+  header.top{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  header.top .brand{display:flex;align-items:center;gap:12px;font-size:22px;letter-spacing:.5px}
+  header.top .brand a{color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px}
+  header.top img{height:40px;width:auto}
+  header.top nav a{margin-left:20px;text-decoration:none;color:var(--muted);font-size:15px}
+  header.top nav a:hover,header.top nav a.here{color:var(--ink)}
+
+  .hero{text-align:center;padding:36px 0 12px}
+  .hero .eyebrow{color:var(--accent);letter-spacing:2px;text-transform:uppercase;font-size:13px;margin:0 0 10px}
+  .hero h1{font-size:clamp(30px,5vw,50px);line-height:1.08;margin:0 0 14px;letter-spacing:.5px}
+  .hero p.lede{font-size:clamp(17px,2.4vw,21px);color:var(--muted);max-width:720px;margin:0 auto 26px}
+  .cta{display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .btn{display:inline-block;padding:12px 22px;border-radius:10px;text-decoration:none;font-size:16px;border:1.5px solid var(--ink)}
+  .btn.primary{background:var(--ink);color:var(--bg)}
+  .btn.ghost{color:var(--ink)}
+
+  section{padding:44px 0;border-top:1px solid var(--line)}
+  section h2{font-size:clamp(24px,3.4vw,32px);margin:0 0 8px;text-align:center}
+  section .sub{color:var(--muted);text-align:center;max-width:720px;margin:0 auto 30px}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .step .n{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;
+    background:var(--chip);color:var(--accent);font-weight:bold;margin-bottom:8px}
+  .step h3{margin:0 0 6px;font-size:18px}
+  .step p{margin:0;color:var(--muted);font-size:15px}
+  .step p+p{margin-top:8px}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow)}
+  .panel p{margin:0 0 12px}
+  .panel p:last-child{margin-bottom:0}
+  .panel .lead{color:var(--accent);font-weight:bold;letter-spacing:.3px}
+
+  .caveats{list-style:none;padding:0;margin:14px 0 0}
+  .caveats li{padding:12px 0;border-top:1px solid var(--line);color:var(--muted)}
+  .caveats li b{color:var(--ink);display:block;margin-bottom:2px;font-weight:normal}
+
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;
+    font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13.5px;line-height:1.5;color:var(--ink);box-shadow:var(--shadow)}
+  pre .cmt{color:var(--muted)}
+  pre .no{color:var(--accent)}
+  pre .ok{color:var(--accent2)}
+  code.inline{background:var(--chip);border-radius:6px;padding:1px 6px;font-family:'SFMono-Regular',Consolas,monospace;font-size:.92em}
+
+  .closing{text-align:center}
+  .closing .btn{margin-top:10px}
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:13px;text-align:center}
+
+  @media (max-width:760px){
+    .steps{grid-template-columns:1fr}
+    header.top nav a:first-child{margin-left:0}
+    header.top nav{font-size:14px}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><a href="index.html">Canvest</a></div>
+    <nav>
+      <a href="index.html#how">How it works</a>
+      <a href="index.html#gate">The gate</a>
+      <a href="ml-methodology.html" class="here">ML methodology</a>
+      <a href="https://github.com/JosephCintron/canvest">GitHub</a>
+    </nav>
+  </header>
+</div>
+
+<div class="wrap hero">
+  <p class="eyebrow">Methodology</p>
+  <h1>ML methodology &amp; evaluation</h1>
+  <p class="lede">The ML in Canvest isn't a model bolted onto a CRUD app — it's a small
+    set of deliberate choices about how to make a language model's output <em>safe to act
+    on with money</em>. Three ideas do the work.</p>
+  <div class="cta">
+    <a class="btn primary" href="#three">The three ideas</a>
+    <a class="btn ghost" href="https://github.com/JosephCintron/canvest/tree/main/examples/evidence-gate">Run the demo</a>
+  </div>
+</div>
+
+<section id="three">
+  <div class="wrap">
+    <h2>Three ideas do the work</h2>
+    <p class="sub">The same discipline recurs at every layer: a model may propose, but
+      deterministic code decides what is allowed to act.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="n">1</span>
+        <h3>Structured output over a closed schema</h3>
+        <p>Deep valuation asks the cloud model for one fixed JSON shape — a resale range,
+          confidence, positives/risks, and comparable sales each tagged <em>realized</em>
+          vs <em>asking</em> with a cited source — and that response is validated before it
+          can influence anything.</p>
+        <p>Malformed fields, out-of-range values, or a comp with no source are rejected.
+          The model <em>proposes</em> a valuation; deterministic code and the evidence gate
+          <em>dispose</em>.</p>
+      </div>
+      <div class="step">
+        <span class="n">2</span>
+        <h3>Cheap-first inference funnel</h3>
+        <p>Compute is spent proportional to signal. A <strong>free local vision model</strong>
+          triages every captured lot; only what clears the bar reaches the
+          <strong>metered cloud valuation</strong>.</p>
+        <p>The expensive model never runs on the firehose — it runs on a shortlist the
+          cheap pass already found plausible, so cost tracks quality, not volume.</p>
+      </div>
+      <div class="step">
+        <span class="n">3</span>
+        <h3>Validation &amp; calibration as the guardrail</h3>
+        <p>The output I trust least is the resale prediction, so it is measured, not
+          assumed. Every lot that was valued and later realized a price feeds a calibration
+          pass: signed and absolute error, a <strong>prediction success rate</strong>, and
+          an advisory <strong>per-category bias correction</strong>.</p>
+        <p>That correction is only trusted once a category has enough realized samples. The
+          bid/no-bid gate always uses the raw, conservative estimate.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="honest">
+  <div class="wrap">
+    <h2>The result of interest, honestly</h2>
+    <p class="sub">Being candid about how well the answer holds up is the point of the whole
+      loop — not a footnote to it.</p>
+    <div class="panel">
+      <p><span class="lead">It isn't any single flip.</span> It's the
+        <strong>calibration curve</strong>: does predicted resale track realized resale, and
+        does that tracking improve as the comp library grows? A companion
+        <strong>backtest</strong> replays the bid/no-bid rule over realized outcomes to check
+        the decision rule actually makes money — not just that the estimator is unbiased.</p>
+      <p>Two caveats belong up front rather than buried:</p>
+      <ul class="caveats">
+        <li><b>The rubric is the biggest lever — and the easiest to fool.</b>
+          Quality is driven most by the coverage of the realized-comp library and the rubric
+          it scores against. A thin or overstated rubric will <em>flatter</em> the numbers,
+          so that input is the first thing to interrogate, not the last.</li>
+        <li><b>These figures are on synthetic data.</b>
+          The numbers in this public showcase come from a demo instance on synthetic
+          listings and prices, so they illustrate the <em>method</em>, not a track record.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="run">
+  <div class="wrap">
+    <h2>See it run</h2>
+    <p class="sub">A self-contained, dependency-free script — no network, no model — puts
+      synthetic lots through the ROI math and the evidence gate. The teaching case is a lot
+      whose economics look great and is <em>still</em> refused.</p>
+    <pre><span class="cmt">$ python gate_demo.py</span>
+verdict   ROI    best comp            lot
+------------------------------------------------------------------------
+<span class="ok">BID</span>        135%  $560 realized       Signed serigraph, framed
+<span class="no">NO-BID</span>     156%  $150 realized       Attractive lithograph, no track record   <span class="cmt">&lt;- the point</span>
+<span class="no">NO-BID</span>      61%  none                Estate screenprint, unbacked
+<span class="no">NO-BID</span>     104%  $700 asking         Gallery etching, asking-price only
+WATCH       19%  $240 realized       Mid-tier etching
+SKIP       184%  $1450 realized      Blue-chip lot, out of band
+SKIP       -71%  none                Overbid decorative piece
+
+<span class="cmt">$ python gate_demo.py --calibrate</span>
+prediction success rate (within +/-20%): 90%  (9/10)
+mean absolute error : 9.8%
+mean signed error   : -0.6%   <span class="cmt">(overall bias)</span>
+per-category bias correction (>= 5 realized samples):
+  Serigraph    factor 0.945  (n=6, mean err +5.8%)</pre>
+    <p class="sub" style="margin-top:24px">The lot with ~156% paper ROI is returned as
+      <strong>NO-BID</strong> because its best comp sits below the evidence floor — and
+      the ~184% blue-chip lot is <strong>SKIP</strong>ped for busting the budget ceiling.
+      Those refusals — not the optimistic estimates — are the product.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/JosephCintron/canvest/tree/main/examples/evidence-gate">Read the runnable example</a>
+      <a class="btn ghost" href="docs/methodology.md">Full methodology</a>
+    </div>
+  </div>
+</section>
+
+<section id="cta" class="closing">
+  <div class="wrap">
+    <h2>Framing → pipeline → calibration</h2>
+    <p class="sub">That loop — pose an open-ended quantitative question, build the data
+      pipeline to answer it, then measure predictions against ground truth and be honest
+      about the gap — is the core of a data-science / ML research role. It's why I built
+      Canvest, and the kind of work I'm pursuing.</p>
+    <a class="btn primary" href="index.html">Back to overview</a>
+    <a class="btn ghost" href="https://github.com/JosephCintron">GitHub profile</a>
+  </div>
+</section>
+
+<footer>
+  © 2026 Joseph Cintron. All rights reserved. A portfolio &amp; product showcase — not open-source software.
+</footer>
+
+</body>
+</html>
